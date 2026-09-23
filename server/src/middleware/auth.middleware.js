@@ -54,7 +54,11 @@ const authorize = (...roles) => {
   };
 };
 
+// Convenience alias for Admin-only routes
+const authAdmin = authorize("ADMIN");
+
 module.exports = {
   protect,
   authorize,
+  authAdmin,
 };
