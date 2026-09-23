@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 const Booking = require("../models/Booking");
 const Desk = require("../models/Desk");
 const Floor = require("../models/Floor");
+const Waitlist = require("../models/Waitlist");
 
 const getDistance = require("../utils/distance");
-    const Waitlist = require("../models/Waitlist");
 
 const { TEAM_QUOTA_PER_FLOOR } = require("../constants/office.constants");
 const { BOOKING_STATUS } = require("../constants/booking.constants");
@@ -21,12 +21,11 @@ const bookDesk = async (req, res) => {
 
   try {
     const { floorId, bookingDate, timeSlot } = req.body;
-
     const userId = req.user._id;
 
     /* ---------- 1. CHECK FLOOR ---------- */
 
-    const floor = await Floor.findById(floorId);
+    const floor = await Floor.findById(floorId).session(session);
 
     if (!floor) {
       throw new Error("Floor not found");
@@ -46,7 +45,7 @@ const bookDesk = async (req, res) => {
       bookingDate,
       timeSlot,
       status: BOOKING_STATUS.BOOKED,
-    });
+    }).session(session);
 
     if (existingBooking) {
       throw new Error("You already booked a desk for this slot");
@@ -54,17 +53,19 @@ const bookDesk = async (req, res) => {
 
     /* ---------- 4. TEAM QUOTA ---------- */
 
-    // Fetch all bookings of this floor/date and populate only teammates.
+    // Fetch all bookings of this floor/date using find().populate() and count matched teammates.
     const teamBookingsForQuota = await Booking.find({
       floor: floorId,
       bookingDate,
       status: BOOKING_STATUS.BOOKED,
-    }).populate({
-      path: "user",
-      match: {
-        team: req.user.team,
-      },
-    });
+    })
+      .session(session)
+      .populate({
+        path: "user",
+        match: {
+          team: req.user.team,
+        },
+      });
 
     const teamBookingCount = teamBookingsForQuota.filter(
       (booking) => booking.user
@@ -79,10 +80,12 @@ const bookDesk = async (req, res) => {
     const desks = await Desk.find({
       floor: floorId,
       isActive: true,
-    }).sort({
-      zone: 1,
-      deskNumber: 1,
-    });
+    })
+      .session(session)
+      .sort({
+        zone: 1,
+        deskNumber: 1,
+      });
 
     /* ---------- 6. GET ALREADY BOOKED DESKS ---------- */
 
@@ -91,7 +94,9 @@ const bookDesk = async (req, res) => {
       bookingDate,
       timeSlot,
       status: BOOKING_STATUS.BOOKED,
-    }).distinct("desk");
+    })
+      .session(session)
+      .distinct("desk");
 
     /* ---------- 7. FILTER AVAILABLE DESKS ---------- */
 
@@ -99,30 +104,28 @@ const bookDesk = async (req, res) => {
       (desk) => !bookedDeskIds.some((id) => id.equals(desk._id))
     );
 
-    // if (availableDesks.length === 0) {
-    //   throw new Error("No desk available on this floor");
-    // }
+    if (availableDesks.length === 0) {
+      await Waitlist.create(
+        [
+          {
+            user: userId,
+            floor: floorId,
+            bookingDate,
+            timeSlot,
+          },
+        ],
+        { session }
+      );
 
+      await session.commitTransaction();
+      session.endSession();
 
-if (availableDesks.length === 0) {
-
-  await Waitlist.create({
-    user: userId,
-    floor: floorId,
-    bookingDate,
-    timeSlot,
-  });
-
-  await session.commitTransaction();
-  session.endSession();
-
-  return res.status(200).json({
-    success: true,
-    waitlisted: true,
-    message: "No desks available. Added to waitlist.",
-  });
-
-}
+      return res.status(200).json({
+        success: true,
+        waitlisted: true,
+        message: "No desks available. Added to waitlist.",
+      });
+    }
 
     let selectedDesk = null;
 
@@ -148,6 +151,7 @@ if (availableDesks.length === 0) {
         floor: floorId,
         status: BOOKING_STATUS.BOOKED,
       })
+        .session(session)
         .populate({
           path: "user",
           match: {
@@ -157,7 +161,7 @@ if (availableDesks.length === 0) {
         .populate("desk");
 
       const teammateDesks = teamBookings
-        .filter((booking) => booking.user)
+        .filter((booking) => booking.user && booking.desk)
         .map((booking) => booking.desk);
 
       // First teammate on floor.
@@ -167,11 +171,11 @@ if (availableDesks.length === 0) {
         // Find team's centroid.
         const centroid = {
           x:
-            teammateDesks.reduce((sum, desk) => sum + desk.x, 0) /
+            teammateDesks.reduce((sum, desk) => sum + (desk.x || 0), 0) /
             teammateDesks.length,
 
           y:
-            teammateDesks.reduce((sum, desk) => sum + desk.y, 0) /
+            teammateDesks.reduce((sum, desk) => sum + (desk.y || 0), 0) /
             teammateDesks.length,
         };
 
@@ -197,9 +201,7 @@ if (availableDesks.length === 0) {
           floor: floorId,
           bookingDate,
           timeSlot,
-          expiresAt: new Date(
-            new Date(bookingDate).setHours(10, 0, 0, 0)
-          ),
+          expiresAt: new Date(new Date(bookingDate).setHours(10, 0, 0, 0)),
         },
       ],
       { session }
@@ -226,9 +228,7 @@ if (availableDesks.length === 0) {
     res.status(201).json({
       success: true,
       message: "Desk booked successfully",
-
       booking: booking[0],
-
       assignedDesk: {
         deskNumber: selectedDesk.deskNumber,
         zone: selectedDesk.zone,
