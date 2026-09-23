@@ -33,27 +33,29 @@ const bookingSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: [
-        "BOOKED",
-        "CHECKED_IN",
-        "CANCELLED",
-        "EXPIRED"
-      ],
+      enum: ["BOOKED", "CHECKED_IN", "CANCELLED", "EXPIRED"],
       default: "BOOKED",
     },
 
-    checkedInAt: Date,
+    checkedInAt: {
+      type: Date,
+      default: null,
+    },
 
-    expiresAt: Date,
+    expiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
   }
 );
 
+// One desk cannot be booked twice for same slot
 bookingSchema.index(
   {
-    desk: 1, //in ascending order
+    desk: 1,
     bookingDate: 1,
     timeSlot: 1,
   },
@@ -61,6 +63,20 @@ bookingSchema.index(
     unique: true,
   }
 );
+
+// One user cannot book two desks in same slot
+bookingSchema.index(
+  {
+    user: 1,
+    bookingDate: 1,
+    timeSlot: 1,
+  },
+  {
+    unique: true,
+  }
+);
+
+module.exports = mongoose.model("Booking", bookingSchema);
 //"No two bookings may have the same desk AND same date AND same timeSlot at the same time."
 
 // Two requests both try to INSERT a booking with the same (desk, bookingDate, timeSlot).
