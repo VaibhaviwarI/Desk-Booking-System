@@ -6,9 +6,9 @@ const {
   cancelBooking,
   checkInBooking,
 } = require("../controllers/booking.controller");
-const { protect } = require("../middleware/auth.middleware");
+const { authMiddleware } = require("../middleware/auth.middleware");
 
-router.use(protect);
+router.use(authMiddleware);
 
 router.post("/book", bookDesk);
 router.get("/my-bookings", getMyBookings);

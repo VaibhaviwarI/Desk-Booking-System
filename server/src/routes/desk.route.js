@@ -6,13 +6,16 @@ const {
   updateDesk,
   deleteDesk,
 } = require("../controllers/desk.controller");
-const { protect, authorize } = require("../middleware/auth.middleware");
+const {
+  authMiddleware,
+  authAdminMiddleware,
+} = require("../middleware/auth.middleware");
 
-router.use(protect);
+router.use(authMiddleware);
 
 router.get("/", getDesks);
-router.post("/", authorize("ADMIN"), createDesk);
-router.put("/:id", authorize("ADMIN"), updateDesk);
-router.delete("/:id", authorize("ADMIN"), deleteDesk);
+router.post("/", authAdminMiddleware, createDesk);
+router.put("/:id", authAdminMiddleware, updateDesk);
+router.delete("/:id", authAdminMiddleware, deleteDesk);
 
 module.exports = router;

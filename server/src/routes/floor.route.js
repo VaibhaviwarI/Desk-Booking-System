@@ -6,13 +6,16 @@ const {
   updateFloor,
   deleteFloor,
 } = require("../controllers/floor.controller");
-const { protect, authorize } = require("../middleware/auth.middleware");
+const {
+  authMiddleware,
+  authAdminMiddleware,
+} = require("../middleware/auth.middleware");
 
-router.use(protect);
+router.use(authMiddleware);
 
 router.get("/", getFloors);
-router.post("/", authorize("ADMIN"), createFloor);
-router.put("/:id", authorize("ADMIN"), updateFloor);
-router.delete("/:id", authorize("ADMIN"), deleteFloor);
+router.post("/", authAdminMiddleware, createFloor);
+router.put("/:id", authAdminMiddleware, updateFloor);
+router.delete("/:id", authAdminMiddleware, deleteFloor);
 
 module.exports = router;

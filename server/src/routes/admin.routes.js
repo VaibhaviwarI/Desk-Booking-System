@@ -6,11 +6,14 @@ const {
   getAllBookings,
   getAdminStats,
 } = require("../controllers/admin.controller");
-const { protect, authorize } = require("../middleware/auth.middleware");
+const {
+  authMiddleware,
+  authAdminMiddleware,
+} = require("../middleware/auth.middleware");
 
-// Enforce both authentication and ADMIN role for all admin routes
-router.use(protect);
-router.use(authorize("ADMIN"));
+// Enforce both general authentication and ADMIN role for all admin routes
+router.use(authMiddleware);
+router.use(authAdminMiddleware);
 
 router.get("/users", getAllUsers);
 router.patch("/users/:userId", updateUserRole);

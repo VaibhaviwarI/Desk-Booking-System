@@ -5,12 +5,15 @@ const {
   getTeams,
   assignUserToTeam,
 } = require("../controllers/team.controller");
-const { protect, authorize } = require("../middleware/auth.middleware");
+const {
+  authMiddleware,
+  authAdminMiddleware,
+} = require("../middleware/auth.middleware");
 
-router.use(protect);
+router.use(authMiddleware);
 
 router.get("/", getTeams);
-router.post("/", authorize("ADMIN"), createTeam);
-router.post("/assign", authorize("ADMIN"), assignUserToTeam);
+router.post("/", authAdminMiddleware, createTeam);
+router.post("/assign", authAdminMiddleware, assignUserToTeam);
 
 module.exports = router;

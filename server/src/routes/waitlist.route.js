@@ -4,9 +4,9 @@ const {
   getMyWaitlist,
   cancelWaitlist,
 } = require("../controllers/waitlist.controller");
-const { protect } = require("../middleware/auth.middleware");
+const { authMiddleware } = require("../middleware/auth.middleware");
 
-router.use(protect);
+router.use(authMiddleware);
 
 router.get("/my-waitlist", getMyWaitlist);
 router.patch("/:waitlistId/cancel", cancelWaitlist);
