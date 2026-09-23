@@ -24,27 +24,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 w-full max-w-md">
-        {/* Header */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 px-4 py-12">
+      <div className="bg-white/95 backdrop-blur-sm rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-500/5 p-8 sm:p-10 w-full max-w-md transition-all">
+        {/* Brand Icon & Heading */}
         <div className="text-center mb-8">
-          <span className="text-5xl">🏢</span>
-          <h1 className="text-2xl font-bold text-gray-900 mt-3">Welcome back</h1>
-          <p className="text-gray-500 text-sm mt-1">Sign in to DeskBook</p>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30 mb-4 text-2xl">
+            🏢
+          </div>
+          <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Welcome back</h1>
+          <p className="text-gray-500 text-sm mt-1">Sign in to your DeskBook account</p>
         </div>
 
-        {/* Error */}
+        {/* Error message */}
         {error && (
-          <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
-            {error}
+          <div className="flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700 text-sm px-4 py-3 rounded-xl mb-5 animate-fadeIn">
+            <span className="text-base">⚠️</span>
+            <p className="flex-1 font-medium">{error}</p>
           </div>
         )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+              Email Address
             </label>
             <input
               type="email"
@@ -52,12 +55,13 @@ export default function LoginPage() {
               required
               value={form.email}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-slate-50/70 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
               placeholder="you@company.com"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
               Password
             </label>
             <input
@@ -66,22 +70,33 @@ export default function LoginPage() {
               required
               value={form.password}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full bg-slate-50/70 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
               placeholder="••••••••"
             />
           </div>
+
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="w-full mt-2 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-60 text-white font-semibold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/35 transition-all text-sm flex items-center justify-center gap-2"
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>Signing in...</span>
+              </>
+            ) : (
+              <span>Sign In</span>
+            )}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Don&apos;t have an account?{" "}
-          <Link to="/register" className="text-indigo-600 font-medium hover:underline">
+          <Link to="/register" className="text-indigo-600 font-semibold hover:text-indigo-700 hover:underline">
             Register
           </Link>
         </p>

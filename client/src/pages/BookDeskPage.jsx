@@ -4,12 +4,11 @@ import { fetchFloors } from "../features/floors/floorsSlice";
 import { bookDesk, clearBookingMessages } from "../features/bookings/bookingsSlice";
 
 const TIME_SLOTS = [
-  { value: "FULL_DAY", label: "Full Day" },
-  { value: "FIRST_HALF", label: "First Half (AM)" },
-  { value: "SECOND_HALF", label: "Second Half (PM)" },
+  { value: "FULL_DAY", label: "Full Day", icon: "☀️", sub: "9:00 AM - 6:00 PM" },
+  { value: "FIRST_HALF", label: "Morning", icon: "🌅", sub: "9:00 AM - 1:30 PM" },
+  { value: "SECOND_HALF", label: "Afternoon", icon: "🌇", sub: "1:30 PM - 6:00 PM" },
 ];
 
-// Minimum date = today
 const today = new Date().toISOString().split("T")[0];
 
 export default function BookDeskPage() {
@@ -36,58 +35,110 @@ export default function BookDeskPage() {
     dispatch(bookDesk(form));
   };
 
+  const selectedFloor = floors.find((f) => f._id === form.floorId);
+
   return (
-    <div className="max-w-xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">Book a Desk</h1>
-      <p className="text-gray-500 text-sm mb-8">
-        Select a floor, date, and time slot. A desk will be automatically assigned near your team.
-      </p>
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Reserve a Desk</h1>
+        <p className="text-gray-500 text-sm mt-1">
+          Choose a floor, date, and preferred slot. We'll automatically cluster you near your team.
+        </p>
+      </div>
 
-      {/* Success */}
+      {/* Success banner */}
       {successMessage && (
-        <div className="bg-green-50 text-green-700 text-sm px-4 py-3 rounded-lg mb-4 border border-green-200">
-          ✅ {successMessage}
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg mb-4">
-          {error}
-        </div>
-      )}
-
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Floor */}
+        <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm p-4 rounded-2xl mb-6 shadow-xs animate-fadeIn">
+          <span className="text-xl">🎉</span>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Floor
+            <p className="font-bold text-emerald-900">Booking Confirmed!</p>
+            <p className="text-emerald-700 mt-0.5">{successMessage}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error banner */}
+      {error && (
+        <div className="flex items-start gap-3 bg-rose-50 border border-rose-200 text-rose-800 text-sm p-4 rounded-2xl mb-6 shadow-xs animate-fadeIn">
+          <span className="text-xl">⚠️</span>
+          <div>
+            <p className="font-bold text-rose-900">Could not complete booking</p>
+            <p className="text-rose-700 mt-0.5">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Main Card */}
+      <div className="bg-white rounded-3xl border border-gray-200/80 p-6 sm:p-8 shadow-xs">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Floor Selection */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+              1. Select Floor
             </label>
             {floorsLoading ? (
-              <p className="text-sm text-gray-400">Loading floors...</p>
+              <p className="text-xs text-gray-400">Loading floors...</p>
+            ) : floors.length === 0 ? (
+              <p className="text-xs text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-200">
+                No floors found. Ask your administrator to create a floor in the Admin Panel.
+              </p>
             ) : (
-              <select
-                name="floorId"
-                required
-                value={form.floorId}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-              >
-                <option value="">— Select a floor —</option>
-                {floors.map((f) => (
-                  <option key={f._id} value={f._id}>
-                    Floor {f.floorNumber} — {f.name} ({f.occupiedCount}/{f.capacity} occupied)
-                  </option>
-                ))}
-              </select>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {floors.map((floor) => {
+                  const isSelected = form.floorId === floor._id;
+                  const occupancyPct = Math.round((floor.occupiedCount / floor.capacity) * 100);
+                  const isFull = floor.occupiedCount >= floor.capacity;
+
+                  return (
+                    <div
+                      key={floor._id}
+                      onClick={() => setForm({ ...form, floorId: floor._id })}
+                      className={`cursor-pointer rounded-2xl p-4 border transition-all ${
+                        isSelected
+                          ? "bg-indigo-50/70 border-indigo-500 shadow-sm shadow-indigo-100"
+                          : "border-gray-200 hover:border-indigo-200 hover:bg-slate-50/60"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-bold text-sm text-gray-900">
+                          Floor {floor.floorNumber}
+                        </span>
+                        {isFull ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
+                            Full
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                            Available
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 mb-3">{floor.name}</p>
+
+                      {/* Mini occupancy bar */}
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className={`h-1.5 rounded-full ${
+                            occupancyPct > 80 ? "bg-rose-500" : occupancyPct > 50 ? "bg-amber-500" : "bg-indigo-500"
+                          }`}
+                          style={{ width: `${Math.min(occupancyPct, 100)}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-[10px] text-gray-400 mt-1 text-right">
+                        {floor.occupiedCount} / {floor.capacity} occupied
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          {/* Date */}
+          {/* Date Picker */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Booking Date
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+              2. Choose Date
             </label>
             <input
               type="date"
@@ -96,57 +147,71 @@ export default function BookDeskPage() {
               min={today}
               value={form.bookingDate}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full sm:w-72 bg-slate-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
             />
           </div>
 
-          {/* Time Slot */}
+          {/* Time Slot Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Time Slot
+            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+              3. Select Time Slot
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              {TIME_SLOTS.map((slot) => (
-                <label
-                  key={slot.value}
-                  className={`flex items-center justify-center text-sm py-2.5 rounded-lg border cursor-pointer transition-colors ${
-                    form.timeSlot === slot.value
-                      ? "bg-indigo-50 border-indigo-500 text-indigo-700 font-medium"
-                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="timeSlot"
-                    value={slot.value}
-                    checked={form.timeSlot === slot.value}
-                    onChange={handleChange}
-                    className="hidden"
-                  />
-                  {slot.label}
-                </label>
-              ))}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {TIME_SLOTS.map((slot) => {
+                const isSelected = form.timeSlot === slot.value;
+                return (
+                  <div
+                    key={slot.value}
+                    onClick={() => setForm({ ...form, timeSlot: slot.value })}
+                    className={`cursor-pointer rounded-2xl p-4 border text-center transition-all ${
+                      isSelected
+                        ? "bg-indigo-50/70 border-indigo-500 shadow-sm shadow-indigo-100"
+                        : "border-gray-200 hover:border-indigo-200 hover:bg-slate-50/60"
+                    }`}
+                  >
+                    <span className="text-xl block mb-1">{slot.icon}</span>
+                    <p className="font-bold text-sm text-gray-800">{slot.label}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{slot.sub}</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={isLoading || !form.floorId}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-medium py-2.5 rounded-lg transition-colors"
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-indigo-600/20 transition-all text-sm flex items-center justify-center gap-2"
           >
-            {isLoading ? "Booking..." : "Book Desk"}
+            {isLoading ? (
+              <span>Reserving Desk...</span>
+            ) : (
+              <span>Confirm & Allocate Desk 🪑</span>
+            )}
           </button>
         </form>
       </div>
 
-      {/* Info box */}
-      <div className="mt-5 bg-blue-50 rounded-xl p-4 text-sm text-blue-700 border border-blue-100">
-        <p className="font-medium mb-1">How desk assignment works</p>
-        <ul className="space-y-1 text-blue-600 list-disc list-inside">
-          <li>If you have a fixed desk, it's always assigned to you.</li>
-          <li>Otherwise, you get the desk closest to your team's cluster.</li>
-          <li>If the floor is full, you're added to the waitlist automatically.</li>
-        </ul>
+      {/* Friendly Rule Guide */}
+      <div className="mt-6 bg-gradient-to-r from-indigo-50/60 to-purple-50/60 border border-indigo-100 rounded-3xl p-5 text-xs text-indigo-900">
+        <p className="font-bold text-indigo-950 mb-2 flex items-center gap-1.5">
+          <span>💡</span> Smart Allocation Highlights
+        </p>
+        <div className="grid sm:grid-cols-3 gap-3 text-indigo-800">
+          <div className="bg-white/70 p-3 rounded-xl border border-indigo-100/60">
+            <span className="font-bold block mb-0.5">📌 Fixed Desk Priority</span>
+            If you own an assigned fixed desk, it will always be reserved for you.
+          </div>
+          <div className="bg-white/70 p-3 rounded-xl border border-indigo-100/60">
+            <span className="font-bold block mb-0.5">👥 Team Centroid</span>
+            Desks are chosen closest to where your teammates have already booked.
+          </div>
+          <div className="bg-white/70 p-3 rounded-xl border border-indigo-100/60">
+            <span className="font-bold block mb-0.5">⏳ Instant Waitlist</span>
+            If the floor is full, you are added to the waitlist and auto-promoted on no-show.
+          </div>
+        </div>
       </div>
     </div>
   );
