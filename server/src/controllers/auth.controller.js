@@ -6,7 +6,7 @@ const generateToken = require("../utils/generateToken");
 ========================================================= */
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role, team } = req.body;
+    const { name, email, password, team } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -20,7 +20,7 @@ const registerUser = async (req, res) => {
       name,
       email,
       password,
-      role: role || "EMPLOYEE",
+      role: "EMPLOYEE", // always register as EMPLOYEE; use admin route to promote
       team: team || null,
     });
 

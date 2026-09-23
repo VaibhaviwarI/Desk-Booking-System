@@ -31,8 +31,12 @@ const bookDesk = async (req, res) => {
       throw new Error("Floor not found");
     }
 
-    /* ---------- 2. FLOOR CAPACITY ---------- */
+    /* ---------- 2. FLOOR CAPACITY (fast hint — real guard is availableDesks check) ---------- */
 
+    // NOTE: occupiedCount can be slightly stale under high concurrency.
+    // The definitive atomic guards are:
+    //   a) availableDesks.length === 0 → waitlist instead of booking
+    //   b) unique index on (desk, bookingDate, timeSlot) → E11000 on race condition
     if (floor.occupiedCount >= floor.capacity) {
       throw new Error("Floor capacity reached");
     }
@@ -89,14 +93,12 @@ const bookDesk = async (req, res) => {
 
     /* ---------- 6. GET ALREADY BOOKED DESKS ---------- */
 
-    const bookedDeskIds = await Booking.find({
+    const bookedDeskIds = await Booking.distinct("desk", {
       floor: floorId,
       bookingDate,
       timeSlot,
       status: BOOKING_STATUS.BOOKED,
-    })
-      .session(session)
-      .distinct("desk");
+    }).session(session);
 
     /* ---------- 7. FILTER AVAILABLE DESKS ---------- */
 

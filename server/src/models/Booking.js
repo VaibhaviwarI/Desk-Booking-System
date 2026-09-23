@@ -52,7 +52,7 @@ const bookingSchema = new mongoose.Schema(
   }
 );
 
-// One desk cannot be booked twice for same slot
+// One desk cannot be booked twice for the same slot (only enforced on active BOOKED records)
 bookingSchema.index(
   {
     desk: 1,
@@ -61,10 +61,11 @@ bookingSchema.index(
   },
   {
     unique: true,
+    partialFilterExpression: { status: "BOOKED" },
   }
 );
 
-// One user cannot book two desks in same slot
+// One user cannot book two desks in the same slot (only enforced on active BOOKED records)
 bookingSchema.index(
   {
     user: 1,
@@ -73,6 +74,7 @@ bookingSchema.index(
   },
   {
     unique: true,
+    partialFilterExpression: { status: "BOOKED" },
   }
 );
 
