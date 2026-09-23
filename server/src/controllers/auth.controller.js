@@ -52,12 +52,18 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const identifier = (email || "").trim();
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { name: { $regex: new RegExp(`^${identifier}$`, "i") } },
+      ],
+    });
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid email/username or password",
       });
     }
 
